@@ -19,7 +19,7 @@ class Test:
     def __init__(self):
         name = ""
 
-# 쓰레드
+# Thread
 class Worker(QThread):
     signal = pyqtSignal(str)
 
@@ -32,16 +32,11 @@ class Worker(QThread):
         print(".... end thread.....")
         self.wait()
 
+    # Thread start
     def run(self):
-        print("hello")
-
         md = detector.MyDetector()
         md.webcam(1, self.signal)
 
-
-    @pyqtSlot("PyQt_PyObject")
-    def recive_instance_singal(self, inst):
-        print(inst.name)
 
 
 class MyMain(MyMainGUI):
@@ -53,10 +48,12 @@ class MyMain(MyMainGUI):
 
         self.th = Worker(parent=self)
 
+        # Thread signal connect
         self.th.signal.connect(self.state_update)
         self.show()
         self.th.start()
 
+    # Thread event
     @pyqtSlot(str)
     def state_update(self, msg):
         if msg == "1":
