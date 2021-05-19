@@ -8,6 +8,7 @@ import time
 class MyDetector():
   IMG_SIZE = (34, 26)
 
+
   def crop_eye(self, img, eye_points):
     x1, y1 = np.amin(eye_points, axis=0)
     x2, y2 = np.amax(eye_points, axis=0)
@@ -28,12 +29,38 @@ class MyDetector():
     return eye_img, eye_rect
 
   def webcam(self, state, state_changed):
+    COUNTER = 0
+    # TOTAL = 0
+    now_time = time.localtime().tm_sec + time.localtime().tm_min * 60 + time.localtime().tm_hour * 3600
+    blink_time = 0
+    acc_time = 0
+
     print("[INFO] loading facial landmark predictor...")
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
     model = load_model('models/2018_12_17_22_58_35.h5')
     model.summary()
+    window = []
+
+    def time_window(sec):
+      if sec < 60:
+        window.append(sec)
+        return window
+      else:
+        window.append(sec)
+        if window[0] < sec - 60:
+          for i in range(len(window)):
+            if window[i] < sec - 60:
+              del window[0]
+            else:
+              break
+          # print(window)
+          return window
+        else:
+          # print(window)
+          return window
+
 
     # webcam
     print("[INFO] camera sensor warming up...")
@@ -41,7 +68,6 @@ class MyDetector():
     time.sleep(2.0)
 
     while True:
-
       img_ori = vs.read()
       img_ori = cv2.resize(img_ori, dsize=(0, 0), fx=0.5, fy=0.5)
 
@@ -76,6 +102,22 @@ class MyDetector():
 
         state_l = state_l % pred_l
         state_r = state_r % pred_r
+        if state_r[0] == '-' and state_l[0] == '-':
+          COUNTER += 1
+        else:
+          if COUNTER >= 1:
+            # TOTAL += 1
+            blink_time = time.localtime().tm_sec + time.localtime().tm_min * 60 + time.localtime().tm_hour * 3600
+            acc_time = blink_time - now_time
+            print(acc_time)
+            li = time_window(acc_time)
+            if acc_time > 60:
+              print("count: ", len(li))
+              state_changed.emit('{}'.format(str(len(li))))
+
+            # print(TOTAL,'T')
+          # reset the eye frame counter
+          COUNTER = 0
 
         cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=(255, 255, 255), thickness=2)
         cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=(255, 255, 255), thickness=2)
@@ -87,15 +129,6 @@ class MyDetector():
       cv2.moveWindow('result', 400, 400)  # 윈도우 위치 조정
 
       key = cv2.waitKey(1) & 0xFF
-
-      if key == ord("1"):
-        print("push 1 button")
-        state = 1
-        state_changed.emit('{}'.format(state))
-      if key == ord("2"):
-        print("push 2 button")
-        state = 2
-        state_changed.emit('{}'.format(state))
 
       if key == ord("q"):
         break

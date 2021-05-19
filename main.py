@@ -10,7 +10,7 @@ class MyMainGUI(QDialog):
         data1 = 13
         data2 = 2.3
 
-        self.lbl_box2 = QLabel('분당 깜빡임 : %d회' % data1)
+        self.lbl_box2 = QLabel('깜빡임 횟수 측정 중 입니다.')
         self.lbl_box3 = QLabel('속도 : %.1f' % data2)
         self.lbl_box1 = QLabel('')
         self.lbl_box2.setStyleSheet(
@@ -73,7 +73,7 @@ class MyMain(MyMainGUI):
 
         self.lbl_box2.setText('분당 깜빡임 : ' + str(perMinute))
 
-        if perMinute < 2:
+        if perMinute < 30:
             self.lbl_box1.setText('눈을 깜빡여 주세요!!')
         else:
             self.lbl_box1.setText('')
