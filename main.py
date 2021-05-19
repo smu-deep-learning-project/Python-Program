@@ -7,11 +7,25 @@ class MyMainGUI(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.qtxt1 = QTextEdit(self)
+        data1 = 13
+        data2 = 2.3
+
+        self.lbl_box2 = QLabel('분당 깜빡임 : %d회' % data1)
+        self.lbl_box3 = QLabel('속도 : %.1f' % data2)
+        self.lbl_box1 = QLabel('')
+        self.lbl_box2.setStyleSheet(
+            "color: black;" "border-style: dashed;" "border-width: 2px;" "border-color: #6799FF;" "border-radius: 3px")
+        self.lbl_box3.setStyleSheet(
+            "color: black;" "border-style: dashed;" "border-width: 2px;" "border-color: #6799FF;" "border-radius: 3px")
+        self.lbl_box1.setStyleSheet(
+            "color: blue;" "background-color: #87CEFA;" "border-style: soild;" "border-width: 3px;" "border-color: #1E90FF")
 
         vbox = QVBoxLayout()
-        vbox.addWidget(self.qtxt1)
+        vbox.addWidget(self.lbl_box1)
+        vbox.addWidget(self.lbl_box2)
+        vbox.addWidget(self.lbl_box3)
         self.setLayout(vbox)
+        self.setWindowTitle('Information')
 
         self.setGeometry(500, 500, 300, 300)
 
@@ -40,11 +54,9 @@ class Worker(QThread):
 
 
 class MyMain(MyMainGUI):
-    add_sec_signal = pyqtSignal()
-    send_instance_singal = pyqtSignal("PyQt_PyObject")
-
     def __init__(self, parent=None):
         super().__init__(parent)
+
 
         self.th = Worker(parent=self)
 
@@ -56,10 +68,25 @@ class MyMain(MyMainGUI):
     # Thread event
     @pyqtSlot(str)
     def state_update(self, msg):
-        if msg == "1":
-            print("webcaom window push 1 button")
-        elif msg == "2":
-            print("webcaom window push 2 button")
+        perMinute = int(msg)
+        print("webcaom window push 1 button")
+
+        self.lbl_box2.setText('분당 깜빡임 : ' + str(perMinute))
+
+        if perMinute < 2:
+            self.lbl_box1.setText('눈을 깜빡여 주세요!!')
+        else:
+            self.lbl_box1.setText('')
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Message', 'Are you sure to quit?',
+                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
+
 
 
 if __name__ == "__main__":
