@@ -5,110 +5,97 @@ from keras.models import load_model
 from imutils.video import VideoStream
 import time
 
-IMG_SIZE = (34, 26)
-COUNTER = 0
-#TOTAL = 0
-now_time = time.localtime().tm_sec+time.localtime().tm_min*60+time.localtime().tm_hour*3600
-blink_time = 0
-acc_time = 0
-print("[INFO] loading facial landmark predictor...")
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+class MyDetector():
+  IMG_SIZE = (34, 26)
 
-model = load_model('models/2018_12_17_22_58_35.h5')
-model.summary()
+  def crop_eye(self, img, eye_points):
+    x1, y1 = np.amin(eye_points, axis=0)
+    x2, y2 = np.amax(eye_points, axis=0)
+    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
 
-def crop_eye(img, eye_points):
-  x1, y1 = np.amin(eye_points, axis=0)
-  x2, y2 = np.amax(eye_points, axis=0)
-  cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+    w = (x2 - x1) * 1.2
+    h = w * self.IMG_SIZE[1] / self.IMG_SIZE[0]
 
-  w = (x2 - x1) * 1.2
-  h = w * IMG_SIZE[1] / IMG_SIZE[0]
+    margin_x, margin_y = w / 2, h / 2
 
-  margin_x, margin_y = w / 2, h / 2
+    min_x, min_y = int(cx - margin_x), int(cy - margin_y)
+    max_x, max_y = int(cx + margin_x), int(cy + margin_y)
 
-  min_x, min_y = int(cx - margin_x), int(cy - margin_y)
-  max_x, max_y = int(cx + margin_x), int(cy + margin_y)
+    eye_rect = np.rint([min_x, min_y, max_x, max_y]).astype(np.int)
 
-  eye_rect = np.rint([min_x, min_y, max_x, max_y]).astype(np.int)
+    eye_img = img[eye_rect[1]:eye_rect[3], eye_rect[0]:eye_rect[2]]
 
-  eye_img = gray[eye_rect[1]:eye_rect[3], eye_rect[0]:eye_rect[2]]
+    return eye_img, eye_rect
 
-  return eye_img, eye_rect
+  def webcam(self, state, state_changed):
+    print("[INFO] loading facial landmark predictor...")
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
-# webcam
-print("[INFO] camera sensor warming up...")
-vs = VideoStream(0).start()
-time.sleep(2.0)
+    model = load_model('models/2018_12_17_22_58_35.h5')
+    model.summary()
 
-while True:
+    # webcam
+    print("[INFO] camera sensor warming up...")
+    vs = VideoStream(0).start()
+    time.sleep(2.0)
 
-  img_ori = vs.read()
-  img_ori = cv2.resize(img_ori, dsize=(0, 0), fx=0.5, fy=0.5)
+    while True:
 
-  img = img_ori.copy()
-  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+      img_ori = vs.read()
+      img_ori = cv2.resize(img_ori, dsize=(0, 0), fx=0.5, fy=0.5)
 
-  faces = detector(gray)
+      img = img_ori.copy()
+      gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-  for face in faces:
-    shapes = predictor(gray, face)
-    shapes = face_utils.shape_to_np(shapes)
+      faces = detector(gray)
 
-    eye_img_l, eye_rect_l = crop_eye(gray, eye_points=shapes[36:42])
-    eye_img_r, eye_rect_r = crop_eye(gray, eye_points=shapes[42:48])
+      for face in faces:
+        shapes = predictor(gray, face)
+        shapes = face_utils.shape_to_np(shapes)
 
-    eye_img_l = cv2.resize(eye_img_l, dsize=IMG_SIZE)
-    eye_img_r = cv2.resize(eye_img_r, dsize=IMG_SIZE)
-    eye_img_r = cv2.flip(eye_img_r, flipCode=1)
+        eye_img_l, eye_rect_l = self.crop_eye(gray, eye_points=shapes[36:42])
+        eye_img_r, eye_rect_r = self.crop_eye(gray, eye_points=shapes[42:48])
 
-    cv2.imshow('l', eye_img_l)
-    cv2.imshow('r', eye_img_r)
+        eye_img_l = cv2.resize(eye_img_l, dsize=self.IMG_SIZE)
+        eye_img_r = cv2.resize(eye_img_r, dsize=self.IMG_SIZE)
+        eye_img_r = cv2.flip(eye_img_r, flipCode=1)
 
-    eye_input_l = eye_img_l.copy().reshape((1, IMG_SIZE[1], IMG_SIZE[0], 1)).astype(np.float32) / 255.
-    eye_input_r = eye_img_r.copy().reshape((1, IMG_SIZE[1], IMG_SIZE[0], 1)).astype(np.float32) / 255.
+        cv2.imshow('l', eye_img_l)
+        cv2.imshow('r', eye_img_r)
 
-    pred_l = model.predict(eye_input_l)
-    pred_r = model.predict(eye_input_r)
+        eye_input_l = eye_img_l.copy().reshape((1, self.IMG_SIZE[1], self.IMG_SIZE[0], 1)).astype(np.float32) / 255.
+        eye_input_r = eye_img_r.copy().reshape((1, self.IMG_SIZE[1], self.IMG_SIZE[0], 1)).astype(np.float32) / 255.
 
-    # visualize
-    state_l = 'O %.1f' if pred_l > 0.1 else '- %.1f'
-    state_r = 'O %.1f' if pred_r > 0.1 else '- %.1f'
+        pred_l = model.predict(eye_input_l)
+        pred_r = model.predict(eye_input_r)
 
-    state_l = state_l % pred_l
-    state_r = state_r % pred_r
+        # visualize
+        state_l = 'O %.1f' if pred_l > 0.1 else '- %.1f'
+        state_r = 'O %.1f' if pred_r > 0.1 else '- %.1f'
 
-    if state_r[0] == '-' and state_l[0] == '-':
-      COUNTER += 1
-    else:
-      if COUNTER>=2:
-        #TOTAL += 1
-        blink_time = time.localtime().tm_sec + time.localtime().tm_min * 60 + time.localtime().tm_hour * 3600
-        acc_time = blink_time - now_time
-        print(acc_time)
-        #print(TOTAL,'T')
-      # reset the eye frame counter
-      COUNTER = 0
-    cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=(255,255,255), thickness=2)
-    cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=(255,255,255), thickness=2)
+        state_l = state_l % pred_l
+        state_r = state_r % pred_r
 
-    cv2.putText(img, state_l, tuple(eye_rect_l[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=(255, 255, 255), thickness=2)
+        cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=(255, 255, 255), thickness=2)
 
-    cv2.imshow('result', img)
-    cv2.moveWindow('result', 400, 400)  # 윈도우 위치 조정
+        cv2.putText(img, state_l, tuple(eye_rect_l[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-    key = cv2.waitKey(1) & 0xFF
+      cv2.imshow('result', img)
+      cv2.moveWindow('result', 400, 400)  # 윈도우 위치 조정
 
-    if key == ord("1"):
-      print("push 1 button")
-      state = 1
-      state_changed.emit('{}'.format(state))
-    if key == ord("2"):
-      print("push 2 button")
-      state = 2
-      state_changed.emit('{}'.format(state))
+      key = cv2.waitKey(1) & 0xFF
 
-    if key == ord("q"):
-      break
+      if key == ord("1"):
+        print("push 1 button")
+        state = 1
+        state_changed.emit('{}'.format(state))
+      if key == ord("2"):
+        print("push 2 button")
+        state = 2
+        state_changed.emit('{}'.format(state))
+
+      if key == ord("q"):
+        break
