@@ -27,7 +27,7 @@ class MyDetector():
 
     return eye_img, eye_rect
 
-  def start(self):
+  def webcam(self, state, state_changed):
     print("[INFO] loading facial landmark predictor...")
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
@@ -85,8 +85,17 @@ class MyDetector():
 
       cv2.imshow('result', img)
       cv2.moveWindow('result', 400, 400)  # 윈도우 위치 조정
-      if cv2.waitKey(1) == ord('q'):
-        break
 
-if __name__ == "__main__":
-  MyDetector().start()
+      key = cv2.waitKey(1) & 0xFF
+
+      if key == ord("1"):
+        print("push 1 button")
+        state = 1
+        state_changed.emit('{}'.format(state))
+      if key == ord("2"):
+        print("push 2 button")
+        state = 2
+        state_changed.emit('{}'.format(state))
+
+      if key == ord("q"):
+        break

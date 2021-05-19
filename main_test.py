@@ -21,7 +21,7 @@ class Test:
 
 # 쓰레드
 class Worker(QThread):
-    sec_changed = pyqtSignal(str)
+    signal = pyqtSignal(str)
 
     def __init__(self, sec=0, parent=None):
         super().__init__()
@@ -35,8 +35,8 @@ class Worker(QThread):
     def run(self):
         print("hello")
 
-        md = detector.MyDetector().start()
-        md.video(self.state, self.sec_changed)
+        md = detector.MyDetector()
+        md.webcam(1, self.signal)
 
 
     @pyqtSlot("PyQt_PyObject")
@@ -53,23 +53,16 @@ class MyMain(MyMainGUI):
 
         self.th = Worker(parent=self)
 
-        self.send_instance_singal.connect(self.th.recive_instance_singal)
+        self.th.signal.connect(self.state_update)
         self.show()
         self.th.start()
 
-    @pyqtSlot()
-    def time_start(self):
-        self.th.start()
-        self.th.working = True
-
-    @pyqtSlot()
-    def add_sec(self):
-        print(".... add singal emit....")
-        self.add_sec_signal.emit()
-
     @pyqtSlot(str)
-    def time_update(self, msg):
-        self.qtxt1.append(msg)
+    def state_update(self, msg):
+        if msg == "1":
+            print("webcaom window push 1 button")
+        elif msg == "2":
+            print("webcaom window push 2 button")
 
 
 if __name__ == "__main__":
