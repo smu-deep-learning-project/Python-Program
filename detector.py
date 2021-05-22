@@ -67,6 +67,8 @@ class MyDetector():
     vs = VideoStream(0).start()
     time.sleep(2.0)
 
+    cv2.moveWindow('result', 400, 400)  # 윈도우 위치 조정
+
     while True:
       img_ori = vs.read()
       img_ori = cv2.resize(img_ori, dsize=(0, 0), fx=0.5, fy=0.5)
@@ -87,8 +89,8 @@ class MyDetector():
         eye_img_r = cv2.resize(eye_img_r, dsize=self.IMG_SIZE)
         eye_img_r = cv2.flip(eye_img_r, flipCode=1)
 
-        cv2.imshow('l', eye_img_l)
-        cv2.imshow('r', eye_img_r)
+        # cv2.imshow('l', eye_img_l)
+        # cv2.imshow('r', eye_img_r)
 
         eye_input_l = eye_img_l.copy().reshape((1, self.IMG_SIZE[1], self.IMG_SIZE[0], 1)).astype(np.float32) / 255.
         eye_input_r = eye_img_r.copy().reshape((1, self.IMG_SIZE[1], self.IMG_SIZE[0], 1)).astype(np.float32) / 255.
@@ -109,13 +111,11 @@ class MyDetector():
             # TOTAL += 1
             blink_time = time.localtime().tm_sec + time.localtime().tm_min * 60 + time.localtime().tm_hour * 3600
             acc_time = blink_time - now_time
-            print(acc_time)
             li = time_window(acc_time)
+            print("blink count: {}, measure time: {} ".format(len(li), acc_time))
             if acc_time > 60:
-              print("count: ", len(li))
               state_changed.emit('{}'.format(str(len(li))))
 
-            # print(TOTAL,'T')
           # reset the eye frame counter
           COUNTER = 0
 
@@ -126,7 +126,6 @@ class MyDetector():
         cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
       cv2.imshow('result', img)
-      cv2.moveWindow('result', 400, 400)  # 윈도우 위치 조정
 
       key = cv2.waitKey(1) & 0xFF
 
