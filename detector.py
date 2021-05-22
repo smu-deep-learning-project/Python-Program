@@ -39,7 +39,7 @@ class MyDetector():
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
-    model = load_model('models/2018_12_17_22_58_35.h5')
+    model = load_model('models/blink-classify.h5')
     model.summary()
     window = []
 
