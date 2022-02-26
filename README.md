@@ -29,7 +29,37 @@
 
 ## 구현 기술
 
+### Facial Landmark를 통한 dataset 생성
+
+<img width="599" alt="image" src="https://user-images.githubusercontent.com/60170358/155846628-c7612292-f6b1-40a5-8a0f-0dc80ee81829.png">
+
+Facial landmark 오픈소스를 이용해 얼굴 영역을 인식한 다음 눈, 코, 입 등의 facial landmark를 도출한다. 그중 눈 부분을 추출하여 data normalization을 거친 다음 전처리와 augmentation 과정을 통해 데이터를 생성하고 dataset을 만든다.
+
+
+
+### CNN
+
+<img width="548" alt="image" src="https://user-images.githubusercontent.com/60170358/155846824-b6e1e60b-5c5e-46cb-8be5-13c6c596fd1d.png">
+
+위와 같은 구조로 구성된 CNN 네트워크로 눈 깜빡임 인식을 학습시킨다. 가중치 업데이트는 Adam optimizer을 사용했다.
+
 ------
 
 ## 기대 효과
 
+1. 소리나 진동과 같은 비시각적 요소를 통한 알림으로 알림 시스템을 보안시켜 사용자에게 명확한 알림을 줄 수 있다.
+
+2. 앱으로 구현하여 스마트폰과 같은 기기에서도 사용이 가능하게 만들 수 있다.
+3. 움직임이 심하거나 얼굴 각도가 틀어질 때, 또한 마스크를 쓰고 있을 때 측정이 불가하지만,다양한 얼굴각도의 dataset을 수집해 학습시켜 보완된 모델을 생성할 수 있다.
+
+
+
+## 참고 문헌
+
+Pothuraju Vishesh,"Eye blink detection using CNN to detect drowsiness level in drivers for road safety", Indonesian Journal of Electrical Engineering and Computer Science,Vol. 22, No. 1, April 2021, pp. 222~231
+
+
+
+Young-Joo Han,"Efficient Eye-Blinking Detection on Smartphones: A Hybrid Approach Based on Deep Learning",Hindawi Mobile Information Systems,Volume 2018, Article ID 6929762, 8 pages
+
+Cian Ryan,"Real-Time Face & Eye Tracking and Blink Detection using Event Cameras ",Neural Networks,Volume 141, September 2021, Pages 87-97
